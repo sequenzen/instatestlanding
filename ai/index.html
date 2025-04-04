@@ -85,16 +85,18 @@
         if (!email) {
           e.preventDefault(); // 이메일이 없으면 제출 방지
           alert('이메일을 입력해주세요.');
+          console.log('⛔ 제출 실패: 이메일이 입력되지 않았습니다.');
           return;
         }
         
         // 타임스탬프 설정
         document.getElementById('timestamp').value = new Date().toISOString();
         
-        console.log('폼 제출 시도:', { 
+        console.log('🔄 폼 제출 시도:', { 
           email, 
           timestamp: document.getElementById('timestamp').value 
         });
+        console.log('📤 Google Apps Script로 데이터 전송 시작...');
         
         // 제출 버튼 비활성화
         const submitButton = form.querySelector('button[type="submit"]');
@@ -106,7 +108,23 @@
       
       // iframe 로드 이벤트
       iframe.addEventListener('load', function() {
-        console.log('iframe 로드됨');
+        console.log('🔄 iframe 로드됨 - 응답 확인 중...');
+        
+        try {
+          // iframe 내용 확인 시도
+          const iframeContent = iframe.contentWindow.document.body.innerHTML;
+          console.log('📩 응답 데이터:', iframeContent);
+          
+          // "success"가 포함되어 있는지 확인 (Google Apps Script 응답에 따라 다를 수 있음)
+          if (iframeContent.includes('success')) {
+            console.log('✅ 제출 성공: 데이터가 Google 스프레드시트에 저장되었습니다.');
+          } else {
+            console.log('⚠️ 응답은 받았으나 성공 여부가 불확실합니다.');
+          }
+        } catch (error) {
+          console.log('⚠️ iframe 내용을 확인할 수 없습니다. (CORS 정책으로 인한 제한일 수 있음)');
+          console.log('📋 오류 정보:', error);
+        }
         
         // iframe이 로드되면 성공 처리
         const submitButton = form.querySelector('button[type="submit"]');
@@ -118,13 +136,31 @@
           errorMessage.classList.add('hidden');
           
           form.reset(); // 폼 초기화
+          console.log('🔄 폼 초기화 완료');
           
           // 5초 후 성공 메시지 숨김
           setTimeout(() => {
             successMessage.classList.add('hidden');
+            console.log('ℹ️ 성공 메시지가 숨겨졌습니다.');
           }, 5000);
         }
       });
+
+      // 통신 오류 감지를 위한 추가 코드
+      window.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IFRAME') {
+          console.log('⛔ iframe 로딩 오류 발생:', e);
+          
+          // 오류 메시지 표시
+          errorMessage.classList.remove('hidden');
+          successMessage.classList.add('hidden');
+          
+          // 제출 버튼 활성화
+          const submitButton = form.querySelector('button[type="submit"]');
+          submitButton.disabled = false;
+          submitButton.innerText = '확인';
+        }
+      }, true);
     </script>
   </body>
 </html>
