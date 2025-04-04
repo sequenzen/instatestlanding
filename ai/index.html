@@ -44,6 +44,9 @@
               class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
           </div>
           
+          <!-- 숨겨진 타임스탬프 필드 추가 -->
+          <input type="hidden" id="timestamp" name="timestamp" value="">
+          
           <button type="submit"
             class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
             확인
@@ -86,15 +89,30 @@
           return;
         }
         
-        console.log('폼 제출 시도:', { name, email });
+        // 타임스탬프 설정
+        document.getElementById('timestamp').value = new Date().toISOString();
+        
+        console.log('폼 제출 시도:', { 
+          name, 
+          email, 
+          timestamp: document.getElementById('timestamp').value 
+        });
         
         // 제출 버튼 비활성화
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.innerText = '제출 중...';
         
-        // 5초 후 성공 메시지 표시 (iframe 응답을 기다리지 않고 표시)
-        setTimeout(() => {
+        // 폼 제출은 기본 동작으로 처리됨
+      });
+      
+      // iframe 로드 이벤트
+      iframe.addEventListener('load', function() {
+        console.log('iframe 로드됨');
+        
+        // iframe이 로드되면 성공 처리
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton.disabled) {
           submitButton.disabled = false;
           submitButton.innerText = '확인';
           
@@ -107,12 +125,7 @@
           setTimeout(() => {
             successMessage.classList.add('hidden');
           }, 5000);
-        }, 2000);
-      });
-      
-      // iframe 로드 이벤트
-      iframe.addEventListener('load', function() {
-        console.log('iframe 로드됨');
+        }
       });
     </script>
   </body>
