@@ -24,12 +24,20 @@
         <p class="mt-6 text-lg leading-8 text-gray-600">주제만 입력하면 10분 만에 발표자료 완성! 디자인과 구성까지 자동화된 AI 발표 자료 생성기.</p>
         <p class="mt-4 text-sm text-indigo-600 font-medium">현재 대기자가 많습니다. 이메일을 남기시면 순서에 따라 안내드립니다.</p>
 
-        <form id="email-form" action="https://formspree.io/f/xeoarrvr" method="POST" class="mt-10 flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-4">
-          <label for="email" class="sr-only">이메일 입력</label>
-          <input id="email" name="email" type="email" required placeholder="이메일을 입력하세요"
-            class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
+        <form id="email-form" action="https://formspree.io/f/xeoarrvr" method="POST" class="mt-10 flex flex-col justify-center max-w-md mx-auto gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <input id="name" name="name" type="text" placeholder="이름을 입력하세요" 
+              class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
+            
+            <input id="email" name="email" type="email" required placeholder="이메일을 입력하세요"
+              class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
+          </div>
+          
+          <!-- 스팸 방지를 위한 honeypot 필드 -->
+          <input type="text" name="_gotcha" style="display:none" />
+          
           <button type="submit"
-            class="flex-none rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
             확인
           </button>
         </form>
@@ -44,8 +52,22 @@
     </footer>
 
     <script>
-      // 모든 JavaScript 코드를 제거하고 기본 폼 제출 사용
-      // 폼은 직접 Formspree로 데이터를 전송합니다
+      const form = document.getElementById('email-form');
+      const successMessage = document.getElementById('submission-success');
+      
+      form.addEventListener('submit', function(e) {
+        // 기본 제출 동작을 유지합니다 (리디렉션 허용)
+        // e.preventDefault();
+        
+        console.log('폼 제출 시도!');
+        
+        // 제출 성공 로그
+        console.log('이름:', document.getElementById('name').value);
+        console.log('이메일:', document.getElementById('email').value);
+        
+        // 성공 메시지 표시
+        successMessage.classList.remove('hidden');
+      });
     </script>
   </body>
 </html>
