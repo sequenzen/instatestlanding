@@ -70,6 +70,8 @@
           return;
         }
         
+        console.log('폼 제출 시도:', { name, email });
+        
         // 제출 버튼 비활성화
         const submitButton = form.querySelector('button[type="submit"]');
         const originalButtonText = submitButton.innerText;
@@ -82,13 +84,22 @@
         formData.append('email', email);
         formData.append('timestamp', new Date().toISOString());
         
-        // Google Apps Script에 데이터 전송
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => {
-          if (response.ok) {
+        // JSONP 방식으로 요청 (CORS 우회)
+        const queryString = new URLSearchParams({
+          name: name,
+          email: email,
+          timestamp: new Date().toISOString()
+        }).toString();
+        
+        // Google Apps Script에 데이터 전송 (JSONP 방식)
+        const scriptElement = document.createElement('script');
+        scriptElement.src = `${SCRIPT_URL}?${queryString}&callback=formSubmitCallback`;
+        document.body.appendChild(scriptElement);
+        
+        // 콜백 함수 정의
+        window.formSubmitCallback = function(response) {
+          console.log('응답 받음:', response);
+          if (response && response.result === 'success') {
             // 성공 시
             form.reset();
             successMessage.classList.remove('hidden');
@@ -98,19 +109,29 @@
             }, 5000);
           } else {
             // 오류 발생 시
-            throw new Error('네트워크 응답이 올바르지 않습니다.');
+            console.error('응답 오류:', response);
+            errorMessage.classList.remove('hidden');
+            successMessage.classList.add('hidden');
           }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          errorMessage.classList.remove('hidden');
-          successMessage.classList.add('hidden');
-        })
-        .finally(() => {
+          
+          // 스크립트 태그 제거
+          document.body.removeChild(scriptElement);
+          
           // 버튼 상태 복원
           submitButton.disabled = false;
           submitButton.innerText = originalButtonText;
-        });
+        };
+        
+        // 시간 초과 처리
+        setTimeout(() => {
+          if (submitButton.disabled) {
+            console.error('요청 시간 초과');
+            errorMessage.classList.remove('hidden');
+            successMessage.classList.add('hidden');
+            submitButton.disabled = false;
+            submitButton.innerText = originalButtonText;
+          }
+        }, 10000);
       });
     </script>
   </body>
