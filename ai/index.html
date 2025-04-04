@@ -70,15 +70,22 @@
     </footer>
 
     <script>
+      console.log('🔄 스크립트 로드됨 - 페이지가 준비되었습니다.');
+      
       const form = document.getElementById('email-form');
       const successMessage = document.getElementById('submission-success');
       const errorMessage = document.getElementById('submission-error');
       const iframe = document.getElementById('hidden-iframe');
+      const submitButton = form.querySelector('button[type="submit"]');
+      
+      // 버튼 클릭 이벤트도 추가 (폼 제출 이벤트와 별개로)
+      submitButton.addEventListener('click', function() {
+        console.log('🖱️ 확인 버튼이 클릭되었습니다.');
+      });
       
       // 폼 제출 이벤트 리스너
       form.addEventListener('submit', function(e) {
-        // 기본 동작은 유지하여 폼 데이터가 iframe을 통해 전송되도록 함
-        // e.preventDefault();
+        console.log('📝 폼 제출 이벤트 발생');
         
         const email = document.getElementById('email').value.trim();
         
@@ -99,9 +106,13 @@
         console.log('📤 Google Apps Script로 데이터 전송 시작...');
         
         // 제출 버튼 비활성화
-        const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.innerText = '제출 중...';
+        
+        // 성공 메시지를 디버깅 목적으로 바로 표시 (테스트용)
+        setTimeout(() => {
+          console.log('⏱️ 테스트: 5초 후 성공 메시지 표시 (실제 제출과 무관)');
+        }, 5000);
         
         // 폼 제출은 기본 동작으로 처리됨
       });
@@ -127,7 +138,6 @@
         }
         
         // iframe이 로드되면 성공 처리
-        const submitButton = form.querySelector('button[type="submit"]');
         if (submitButton.disabled) {
           submitButton.disabled = false;
           submitButton.innerText = '확인';
@@ -156,11 +166,29 @@
           successMessage.classList.add('hidden');
           
           // 제출 버튼 활성화
-          const submitButton = form.querySelector('button[type="submit"]');
           submitButton.disabled = false;
           submitButton.innerText = '확인';
         }
       }, true);
+      
+      // 테스트를 위한 직접 호출 함수 추가
+      window.testFormSubmission = function() {
+        console.log('🧪 테스트 함수 호출됨');
+        
+        // 성공 메시지 표시
+        successMessage.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        
+        console.log('✅ 테스트: 성공 메시지가 표시되었습니다.');
+        
+        // 5초 후 성공 메시지 숨김
+        setTimeout(() => {
+          successMessage.classList.add('hidden');
+          console.log('ℹ️ 테스트: 성공 메시지가 숨겨졌습니다.');
+        }, 5000);
+      };
+      
+      console.log('✅ 모든 이벤트 리스너가 등록되었습니다. 폼을 제출할 준비가 되었습니다.');
     </script>
   </body>
 </html>
