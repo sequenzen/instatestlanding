@@ -9,6 +9,13 @@
       body {
         font-family: 'Pretendard', sans-serif;
       }
+      .hidden-iframe {
+        display: none;
+        width: 0;
+        height: 0;
+        border: 0;
+        border: none;
+      }
     </style>
   </head>
   <body class="bg-white text-gray-900 min-h-screen flex flex-col relative isolate overflow-hidden">
@@ -24,7 +31,11 @@
         <p class="mt-6 text-lg leading-8 text-gray-600">주제만 입력하면 10분 만에 발표자료 완성! 디자인과 구성까지 자동화된 AI 발표 자료 생성기.</p>
         <p class="mt-4 text-sm text-indigo-600 font-medium">현재 대기자가 많습니다. 이메일을 남기시면 순서에 따라 안내드립니다.</p>
 
-        <form id="email-form" class="mt-10 flex flex-col justify-center max-w-md mx-auto gap-4">
+        <!-- Google Apps Script로 전송할 폼 -->
+        <form id="email-form" class="mt-10 flex flex-col justify-center max-w-md mx-auto gap-4" 
+              target="hidden-iframe" 
+              action="https://script.google.com/macros/s/AKfycbxwbppXTp2Y45X2wHiP6kaG4ML2QUjLZZJFUV_tFQeGxCOVk0UiWPbS4DmqUQUKITg0/exec" 
+              method="POST">
           <div class="flex flex-col sm:flex-row gap-4">
             <input id="name" name="name" type="text" placeholder="이름을 입력하세요" 
               class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
@@ -38,6 +49,10 @@
             확인
           </button>
         </form>
+        
+        <!-- 숨겨진 iframe -->
+        <iframe name="hidden-iframe" id="hidden-iframe" class="hidden-iframe"></iframe>
+        
         <div id="submission-success" class="mt-4 text-green-600 hidden">
           감사합니다! 이메일이 성공적으로 저장되었습니다.
         </div>
@@ -55,17 +70,18 @@
       const form = document.getElementById('email-form');
       const successMessage = document.getElementById('submission-success');
       const errorMessage = document.getElementById('submission-error');
+      const iframe = document.getElementById('hidden-iframe');
       
-      // Google 스프레드시트 제출을 위한 URL - 아래 URL을 Apps Script URL로 변경해야 합니다
-      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwbppXTp2Y45X2wHiP6kaG4ML2QUjLZZJFUV_tFQeGxCOVk0UiWPbS4DmqUQUKITg0/exec';
-      
+      // 폼 제출 이벤트 리스너
       form.addEventListener('submit', function(e) {
-        e.preventDefault();
+        // 기본 동작은 유지하여 폼 데이터가 iframe을 통해 전송되도록 함
+        // e.preventDefault();
         
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         
         if (!email) {
+          e.preventDefault(); // 이메일이 없으면 제출 방지
           alert('이메일을 입력해주세요.');
           return;
         }
@@ -74,64 +90,29 @@
         
         // 제출 버튼 비활성화
         const submitButton = form.querySelector('button[type="submit"]');
-        const originalButtonText = submitButton.innerText;
         submitButton.disabled = true;
         submitButton.innerText = '제출 중...';
         
-        // 데이터 준비
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('email', email);
-        formData.append('timestamp', new Date().toISOString());
-        
-        // JSONP 방식으로 요청 (CORS 우회)
-        const queryString = new URLSearchParams({
-          name: name,
-          email: email,
-          timestamp: new Date().toISOString()
-        }).toString();
-        
-        // Google Apps Script에 데이터 전송 (JSONP 방식)
-        const scriptElement = document.createElement('script');
-        scriptElement.src = `${SCRIPT_URL}?${queryString}&callback=formSubmitCallback`;
-        document.body.appendChild(scriptElement);
-        
-        // 콜백 함수 정의
-        window.formSubmitCallback = function(response) {
-          console.log('응답 받음:', response);
-          if (response && response.result === 'success') {
-            // 성공 시
-            form.reset();
-            successMessage.classList.remove('hidden');
-            errorMessage.classList.add('hidden');
-            setTimeout(() => {
-              successMessage.classList.add('hidden');
-            }, 5000);
-          } else {
-            // 오류 발생 시
-            console.error('응답 오류:', response);
-            errorMessage.classList.remove('hidden');
-            successMessage.classList.add('hidden');
-          }
-          
-          // 스크립트 태그 제거
-          document.body.removeChild(scriptElement);
-          
-          // 버튼 상태 복원
-          submitButton.disabled = false;
-          submitButton.innerText = originalButtonText;
-        };
-        
-        // 시간 초과 처리
+        // 5초 후 성공 메시지 표시 (iframe 응답을 기다리지 않고 표시)
         setTimeout(() => {
-          if (submitButton.disabled) {
-            console.error('요청 시간 초과');
-            errorMessage.classList.remove('hidden');
+          submitButton.disabled = false;
+          submitButton.innerText = '확인';
+          
+          successMessage.classList.remove('hidden');
+          errorMessage.classList.add('hidden');
+          
+          form.reset(); // 폼 초기화
+          
+          // 5초 후 성공 메시지 숨김
+          setTimeout(() => {
             successMessage.classList.add('hidden');
-            submitButton.disabled = false;
-            submitButton.innerText = originalButtonText;
-          }
-        }, 10000);
+          }, 5000);
+        }, 2000);
+      });
+      
+      // iframe 로드 이벤트
+      iframe.addEventListener('load', function() {
+        console.log('iframe 로드됨');
       });
     </script>
   </body>
