@@ -44,42 +44,8 @@
     </footer>
 
     <script>
-      const form = document.getElementById('email-form');
-      const successMessage = document.getElementById('submission-success');
-      
-      form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const email = document.getElementById('email').value.trim();
-        
-        if (!email) {
-          alert('이메일을 입력해주세요.');
-          return;
-        }
-        
-        try {
-          const formData = new FormData(form);
-          const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'Accept': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            form.reset();
-            successMessage.classList.remove('hidden');
-            setTimeout(() => {
-              successMessage.classList.add('hidden');
-            }, 5000);
-          } else {
-            alert('제출 중 오류가 발생했습니다. 다시 시도해주세요.');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert('제출 중 오류가 발생했습니다. 다시 시도해주세요.');
-        }
-      });
+      // 모든 JavaScript 코드를 제거하고 기본 폼 제출 사용
+      // 폼은 직접 Formspree로 데이터를 전송합니다
     </script>
   </body>
 </html>
