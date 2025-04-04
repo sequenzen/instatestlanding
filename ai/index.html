@@ -34,15 +34,15 @@
         <!-- Google Apps Script로 전송할 폼 -->
         <form id="email-form" class="mt-10 flex flex-col justify-center max-w-md mx-auto gap-4" 
               target="hidden-iframe" 
-              action="https://script.google.com/macros/s/AKfycbweKUOEnxVZSJpqtO8FPIk-a4kcFJdVF2gfN5Z7Kp0Tpa-s7c2AAuW-hVYbCd5s1YnN/exec" 
+              action="https://script.google.com/macros/s/AKfycbxuo0ZSHa2U5rida_Lx7ZI99Ak4w3I79Pwn56dZxNO1KfSEuWH8bO2-H8X7LEcYlTvc/exec" 
               method="POST">
           <div class="flex flex-col sm:flex-row gap-4">
-            <input id="name" name="name" type="text" placeholder="이름을 입력하세요" 
-              class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
-            
             <input id="email" name="email" type="email" required placeholder="이메일을 입력하세요"
               class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 sm:text-sm" />
           </div>
+          
+          <!-- 숨겨진 이름 필드 추가 (서버 측 처리 유지) -->
+          <input type="hidden" id="name" name="name" value="웹사이트 방문자">
           
           <!-- 숨겨진 타임스탬프 필드 추가 -->
           <input type="hidden" id="timestamp" name="timestamp" value="">
@@ -80,7 +80,6 @@
         // 기본 동작은 유지하여 폼 데이터가 iframe을 통해 전송되도록 함
         // e.preventDefault();
         
-        const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         
         if (!email) {
@@ -93,7 +92,6 @@
         document.getElementById('timestamp').value = new Date().toISOString();
         
         console.log('폼 제출 시도:', { 
-          name, 
           email, 
           timestamp: document.getElementById('timestamp').value 
         });
