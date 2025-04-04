@@ -9,6 +9,13 @@
       body {
         font-family: 'Pretendard', sans-serif;
       }
+      .hidden-iframe {
+        display: none;
+        width: 0;
+        height: 0;
+        border: 0;
+        border: none;
+      }
     </style>
   </head>
   <body class="bg-white text-gray-900 min-h-screen flex flex-col relative isolate overflow-hidden">
@@ -24,15 +31,40 @@
         <p class="mt-6 text-lg leading-8 text-gray-600">콘텐츠 한 번에 업로드! 네이버, 티스토리, 인스타그램까지 자동 발행을 경험해보세요.</p>
         <p class="mt-4 text-sm text-cyan-600 font-medium">현재 등록 요청이 많습니다. 이메일을 남기시면 순서에 따라 안내해드립니다.</p>
 
-        <form id="email-form" class="mt-10 flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-4">
-          <label for="email" class="sr-only">이메일 입력</label>
-          <input id="email" name="email" type="email" required placeholder="이메일을 입력하세요"
-            class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-500 sm:text-sm" />
+        <!-- Google Apps Script로 전송할 폼 -->
+        <form id="email-form" class="mt-10 flex flex-col justify-center max-w-md mx-auto gap-4" 
+              target="hidden-iframe" 
+              action="https://script.google.com/macros/s/AKfycbxC3xSiqeRcuN_efM9SIXyNz2F3PQGn1CCvVFLn_8Lh-KVRIJ8p9lZ4GVivMIHVTnEg/exec" 
+              method="POST">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <input id="email" name="email" type="email" required placeholder="이메일을 입력하세요"
+              class="min-w-0 flex-auto rounded-md bg-white px-4 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-500 sm:text-sm" />
+          </div>
+          
+          <!-- 숨겨진 이름 필드 추가 (서버 측 처리 유지) -->
+          <input type="hidden" id="name" name="name" value="블로그 방문자">
+          
+          <!-- 시트 구분을 위한 hidden 필드 추가 -->
+          <input type="hidden" id="sheet" name="sheet" value="Sheet2">
+          
+          <!-- 숨겨진 타임스탬프 필드 추가 -->
+          <input type="hidden" id="timestamp" name="timestamp" value="">
+          
           <button type="submit"
             class="flex-none rounded-md bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600">
             확인
           </button>
         </form>
+        
+        <!-- 숨겨진 iframe -->
+        <iframe name="hidden-iframe" id="hidden-iframe" class="hidden-iframe"></iframe>
+        
+        <div id="submission-success" class="mt-4 text-green-600 hidden">
+          감사합니다! 이메일이 성공적으로 저장되었습니다.
+        </div>
+        <div id="submission-error" class="mt-4 text-red-600 hidden">
+          제출 중 오류가 발생했습니다. 다시 시도해 주세요.
+        </div>
       </section>
     </main>
 
@@ -41,16 +73,99 @@
     </footer>
 
     <script>
+      console.log('🔄 스크립트 로드됨 - 블로그 페이지가 준비되었습니다.');
+      
       const form = document.getElementById('email-form');
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
+      const successMessage = document.getElementById('submission-success');
+      const errorMessage = document.getElementById('submission-error');
+      const iframe = document.getElementById('hidden-iframe');
+      const submitButton = form.querySelector('button[type="submit"]');
+      
+      // 폼 제출 이벤트 리스너
+      form.addEventListener('submit', function(e) {
+        console.log('📝 폼 제출 이벤트 발생');
+        
         const email = document.getElementById('email').value.trim();
-        if (email) {
-          alert('저장되었습니다. 곧 연락드리겠습니다.');
-        } else {
+        
+        if (!email) {
+          e.preventDefault(); // 이메일이 없으면 제출 방지
           alert('이메일을 입력해주세요.');
+          console.log('⛔ 제출 실패: 이메일이 입력되지 않았습니다.');
+          return;
+        }
+        
+        // 타임스탬프 설정
+        document.getElementById('timestamp').value = new Date().toISOString();
+        
+        console.log('🔄 폼 제출 시도:', { 
+          email, 
+          sheet: 'Sheet2',
+          timestamp: document.getElementById('timestamp').value 
+        });
+        console.log('📤 Google Apps Script로 데이터 전송 시작...');
+        
+        // 제출 버튼 비활성화
+        submitButton.disabled = true;
+        submitButton.innerText = '제출 중...';
+        
+        // 폼 제출은 기본 동작으로 처리됨
+      });
+      
+      // iframe 로드 이벤트
+      iframe.addEventListener('load', function() {
+        console.log('🔄 iframe 로드됨 - 응답 확인 중...');
+        
+        try {
+          // iframe 내용 확인 시도
+          const iframeContent = iframe.contentWindow.document.body.innerHTML;
+          console.log('📩 응답 데이터:', iframeContent);
+          
+          // "success"가 포함되어 있는지 확인 (Google Apps Script 응답에 따라 다를 수 있음)
+          if (iframeContent.includes('success')) {
+            console.log('✅ 제출 성공: 데이터가 Google 스프레드시트의 Sheet2에 저장되었습니다.');
+          } else {
+            console.log('⚠️ 응답은 받았으나 성공 여부가 불확실합니다.');
+          }
+        } catch (error) {
+          console.log('⚠️ iframe 내용을 확인할 수 없습니다. (CORS 정책으로 인한 제한일 수 있음)');
+          console.log('📋 오류 정보:', error);
+        }
+        
+        // iframe이 로드되면 성공 처리
+        if (submitButton.disabled) {
+          submitButton.disabled = false;
+          submitButton.innerText = '확인';
+          
+          successMessage.classList.remove('hidden');
+          errorMessage.classList.add('hidden');
+          
+          form.reset(); // 폼 초기화
+          console.log('🔄 폼 초기화 완료');
+          
+          // 5초 후 성공 메시지 숨김
+          setTimeout(() => {
+            successMessage.classList.add('hidden');
+            console.log('ℹ️ 성공 메시지가 숨겨졌습니다.');
+          }, 5000);
         }
       });
+
+      // 통신 오류 감지를 위한 추가 코드
+      window.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IFRAME') {
+          console.log('⛔ iframe 로딩 오류 발생:', e);
+          
+          // 오류 메시지 표시
+          errorMessage.classList.remove('hidden');
+          successMessage.classList.add('hidden');
+          
+          // 제출 버튼 활성화
+          submitButton.disabled = false;
+          submitButton.innerText = '확인';
+        }
+      }, true);
+      
+      console.log('✅ 모든 이벤트 리스너가 등록되었습니다. 폼을 제출할 준비가 되었습니다.');
     </script>
   </body>
 </html>
