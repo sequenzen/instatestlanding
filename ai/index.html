@@ -42,7 +42,10 @@
           </div>
           
           <!-- 숨겨진 이름 필드 추가 (서버 측 처리 유지) -->
-          <input type="hidden" id="name" name="name" value="웹사이트 방문자">
+          <input type="hidden" id="name" name="name" value="PPT 방문자">
+          
+          <!-- 시트 구분을 위한 hidden 필드 추가 -->
+          <input type="hidden" id="sheet" name="sheet" value="Sheet1">
           
           <!-- 숨겨진 타임스탬프 필드 추가 -->
           <input type="hidden" id="timestamp" name="timestamp" value="">
@@ -77,6 +80,57 @@
       const errorMessage = document.getElementById('submission-error');
       const iframe = document.getElementById('hidden-iframe');
       const submitButton = form.querySelector('button[type="submit"]');
+      
+      // 페이지 방문 기록 함수
+      function recordPageVisit() {
+        // 중복 방문 방지를 위한 세션 확인
+        const visitRecorded = sessionStorage.getItem('visitRecorded');
+        if (visitRecorded) return;
+        
+        // 숨겨진 iframe 생성
+        const visitFrame = document.createElement('iframe');
+        visitFrame.style.display = 'none';
+        document.body.appendChild(visitFrame);
+        
+        // 방문 데이터 전송용 폼 생성
+        const visitForm = document.createElement('form');
+        visitForm.method = 'POST';
+        visitForm.action = 'https://script.google.com/macros/s/AKfycbxC3xSiqeRcuN_efM9SIXyNz2F3PQGn1CCvVFLn_8Lh-KVRIJ8p9lZ4GVivMIHVTnEg/exec';
+        visitForm.target = 'visit-frame';
+        
+        // 데이터 필드 추가
+        const createField = (name, value) => {
+          const field = document.createElement('input');
+          field.type = 'hidden';
+          field.name = name;
+          field.value = value;
+          return field;
+        };
+        
+        visitForm.appendChild(createField('sheet', 'Sheet4')); // 방문 기록용 시트
+        visitForm.appendChild(createField('action', 'pageview'));
+        visitForm.appendChild(createField('page', 'index'));
+        visitForm.appendChild(createField('timestamp', new Date().toISOString()));
+        visitForm.appendChild(createField('userAgent', navigator.userAgent));
+        
+        // 방문 기록 전송
+        visitFrame.name = 'visit-frame';
+        document.body.appendChild(visitForm);
+        
+        console.log('📊 페이지 방문 기록 전송 중...');
+        visitForm.submit();
+        
+        // 세션 중복 방문 기록 방지
+        sessionStorage.setItem('visitRecorded', 'true');
+        
+        // 폼 제거
+        setTimeout(() => {
+          document.body.removeChild(visitForm);
+        }, 1000);
+      }
+      
+      // 페이지 로드 시 방문 기록
+      window.addEventListener('load', recordPageVisit);
       
       // 버튼 클릭 이벤트도 추가 (폼 제출 이벤트와 별개로)
       submitButton.addEventListener('click', function() {
