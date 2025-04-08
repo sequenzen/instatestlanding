@@ -87,46 +87,52 @@
         const visitRecorded = sessionStorage.getItem('visitRecorded');
         if (visitRecorded) return;
         
-        // 숨겨진 iframe 생성
-        const visitFrame = document.createElement('iframe');
-        visitFrame.style.display = 'none';
-        document.body.appendChild(visitFrame);
+        // 방문 시간 기록
+        const timestamp = new Date().toISOString();
+        const formattedDate = new Date().toLocaleString('ko-KR');
         
-        // 방문 데이터 전송용 폼 생성
-        const visitForm = document.createElement('form');
-        visitForm.method = 'POST';
-        visitForm.action = 'https://script.google.com/macros/s/AKfycbxC3xSiqeRcuN_efM9SIXyNz2F3PQGn1CCvVFLn_8Lh-KVRIJ8p9lZ4GVivMIHVTnEg/exec';
-        visitForm.target = 'visit-frame';
+        // 사용자 정보 수집
+        const userAgent = navigator.userAgent;
+        const language = navigator.language;
+        const screenSize = `${window.screen.width}x${window.screen.height}`;
+        const referrer = document.referrer || '직접 접속';
+        const page = 'AI PPT 자동 생성';
+        const url = window.location.href;
         
-        // 데이터 필드 추가
-        const createField = (name, value) => {
-          const field = document.createElement('input');
-          field.type = 'hidden';
-          field.name = name;
-          field.value = value;
-          return field;
+        // 방문 기록을 위한 JSON 데이터
+        const visitData = {
+          timestamp: formattedDate,
+          page: page,
+          url: url,
+          userAgent: userAgent,
+          language: language,
+          screenSize: screenSize,
+          referrer: referrer,
+          action: 'recordVisit',
+          sheetId: '11DGFgaaSEThVp-Zl7Jc7WUOuunGV7UOSYQgdD79Cmo4',
+          sheetName: 'visitor_logs'
         };
         
-        visitForm.appendChild(createField('sheet', 'Sheet4')); // 방문 기록용 시트
-        visitForm.appendChild(createField('action', 'pageview'));
-        visitForm.appendChild(createField('page', 'index'));
-        visitForm.appendChild(createField('timestamp', new Date().toISOString()));
-        visitForm.appendChild(createField('userAgent', navigator.userAgent));
-        
-        // 방문 기록 전송
-        visitFrame.name = 'visit-frame';
-        document.body.appendChild(visitForm);
-        
-        console.log('📊 페이지 방문 기록 전송 중...');
-        visitForm.submit();
+        // Google Apps Script 웹앱으로 POST 요청 전송
+        fetch('https://script.google.com/macros/s/AKfycbyH7FNUXj_v_A6UVZz-T5tLJl0xGRW6YIcAbYmAPOiIlKHhHM8yoFmfDZCmOhC9I-CxFA/exec', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(visitData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('✅ 방문 기록이 스프레드시트에 저장되었습니다.', data);
+        })
+        .catch(error => {
+          console.error('⚠️ 방문 기록 저장 중 오류 발생:', error);
+        });
         
         // 세션 중복 방문 기록 방지
         sessionStorage.setItem('visitRecorded', 'true');
         
-        // 폼 제거
-        setTimeout(() => {
-          document.body.removeChild(visitForm);
-        }, 1000);
+        console.log('📊 페이지 방문 기록 전송 중...');
       }
       
       // 페이지 로드 시 방문 기록
