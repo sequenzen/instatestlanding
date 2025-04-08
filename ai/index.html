@@ -42,10 +42,7 @@
           </div>
           
           <!-- 숨겨진 이름 필드 추가 (서버 측 처리 유지) -->
-          <input type="hidden" id="name" name="name" value="PPT 방문자">
-          
-          <!-- 시트 구분을 위한 hidden 필드 추가 -->
-          <input type="hidden" id="sheet" name="sheet" value="Sheet1">
+          <input type="hidden" id="name" name="name" value="웹사이트 방문자">
           
           <!-- 숨겨진 타임스탬프 필드 추가 -->
           <input type="hidden" id="timestamp" name="timestamp" value="">
@@ -72,6 +69,81 @@
       © 2025 benly. All rights reserved.
     </footer>
 
+    <!-- 페이지 방문 로깅을 위한 스크립트 -->
+    <script>
+      // 페이지 로드 시 실행되는 방문자 로그 기록 함수
+      window.addEventListener('load', function() {
+        // 방문자 정보 수집
+        const visitTime = new Date().toISOString();
+        const userAgent = navigator.userAgent;
+        const language = navigator.language;
+        const referrer = document.referrer || 'direct';
+        const screenSize = `${window.screen.width}x${window.screen.height}`;
+        
+        // 중복 방문 방지를 위한 세션 스토리지 확인
+        const lastVisit = sessionStorage.getItem('lastVisit');
+        const currentTime = new Date().getTime();
+        
+        // 30분(1800000ms) 이내 재방문이면 기록하지 않음
+        if (lastVisit && (currentTime - parseInt(lastVisit)) < 1800000) {
+          console.log('📊 최근 방문 기록이 있어 중복 기록을 방지합니다.');
+          return;
+        }
+        
+        // 현재 시간 저장
+        sessionStorage.setItem('lastVisit', currentTime.toString());
+        
+        console.log('🔍 방문 기록 전송 중...');
+        
+        // 방문 데이터 생성
+        const formData = new FormData();
+        formData.append('email', '방문자(미입력)');
+        formData.append('name', '사이트 방문자');
+        formData.append('sheet', 'Sheet4'); // 방문 기록용 시트 (별도 생성 필요)
+        formData.append('timestamp', visitTime);
+        formData.append('userAgent', userAgent);
+        formData.append('referrer', referrer);
+        formData.append('language', language);
+        formData.append('screenSize', screenSize);
+        formData.append('isPageVisit', 'true'); // 방문 기록임을 표시
+        
+        // 숨겨진 iframe 생성 또는 재사용
+        let visitFrame = document.getElementById('visit-iframe');
+        if (!visitFrame) {
+          visitFrame = document.createElement('iframe');
+          visitFrame.id = 'visit-iframe';
+          visitFrame.name = 'visit-iframe';
+          visitFrame.style.display = 'none';
+          document.body.appendChild(visitFrame);
+        }
+        
+        // 폼 생성 및 제출
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://script.google.com/macros/s/AKfycbxC3xSiqeRcuN_efM9SIXyNz2F3PQGn1CCvVFLn_8Lh-KVRIJ8p9lZ4GVivMIHVTnEg/exec';
+        form.target = 'visit-iframe';
+        
+        // 폼 데이터 추가
+        for (const pair of formData.entries()) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = pair[0];
+          input.value = pair[1];
+          form.appendChild(input);
+        }
+        
+        // 문서에 폼 추가하고 자동 제출
+        document.body.appendChild(form);
+        form.submit();
+        
+        // 폼 제거
+        setTimeout(() => {
+          document.body.removeChild(form);
+          console.log('✅ 방문 기록이 전송되었습니다.');
+        }, 1000);
+      });
+    </script>
+
     <script>
       console.log('🔄 스크립트 로드됨 - 페이지가 준비되었습니다.');
       
@@ -80,63 +152,6 @@
       const errorMessage = document.getElementById('submission-error');
       const iframe = document.getElementById('hidden-iframe');
       const submitButton = form.querySelector('button[type="submit"]');
-      
-      // 페이지 방문 기록 함수
-      function recordPageVisit() {
-        // 중복 방문 방지를 위한 세션 확인
-        const visitRecorded = sessionStorage.getItem('visitRecorded');
-        if (visitRecorded) return;
-        
-        // 방문 시간 기록
-        const timestamp = new Date().toISOString();
-        const formattedDate = new Date().toLocaleString('ko-KR');
-        
-        // 사용자 정보 수집
-        const userAgent = navigator.userAgent;
-        const language = navigator.language;
-        const screenSize = `${window.screen.width}x${window.screen.height}`;
-        const referrer = document.referrer || '직접 접속';
-        const page = 'AI PPT 자동 생성';
-        const url = window.location.href;
-        
-        // 방문 기록을 위한 JSON 데이터
-        const visitData = {
-          timestamp: formattedDate,
-          page: page,
-          url: url,
-          userAgent: userAgent,
-          language: language,
-          screenSize: screenSize,
-          referrer: referrer,
-          action: 'recordVisit',
-          sheetId: '11DGFgaaSEThVp-Zl7Jc7WUOuunGV7UOSYQgdD79Cmo4',
-          sheetName: 'visitor_logs'
-        };
-        
-        // Google Apps Script 웹앱으로 POST 요청 전송
-        fetch('https://script.google.com/macros/s/AKfycbxC3xSiqeRcuN_efM9SIXyNz2F3PQGn1CCvVFLn_8Lh-KVRIJ8p9lZ4GVivMIHVTnEg/exec', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(visitData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('✅ 방문 기록이 스프레드시트에 저장되었습니다.', data);
-        })
-        .catch(error => {
-          console.error('⚠️ 방문 기록 저장 중 오류 발생:', error);
-        });
-        
-        // 세션 중복 방문 기록 방지
-        sessionStorage.setItem('visitRecorded', 'true');
-        
-        console.log('📊 페이지 방문 기록 전송 중...');
-      }
-      
-      // 페이지 로드 시 방문 기록
-      window.addEventListener('load', recordPageVisit);
       
       // 버튼 클릭 이벤트도 추가 (폼 제출 이벤트와 별개로)
       submitButton.addEventListener('click', function() {
